@@ -306,15 +306,18 @@ class Filter(object):
         self.key = name if key is None else key
         self.extra_filters = {} if extra_filters is None else extra_filters
         self._coerce_func = coerce
+        self.flagNOT = None
 
 
     def filter(self, queryset, values):
         """Given queryset and selected values, return filtered queryset."""
         if values:
             filters = {"{0}__in".format(self.lookup): values}
-            filters.update(self.extra_filters)
-            return queryset.filter(
-                **filters).distinct()
+            if not self.flagNOT:
+                filters.update(self.extra_filters)
+                return queryset.filter(**filters).distinct()
+            else:
+                return queryset.exclude(**filters).filter(**self.extra_filters).distinct()
         return queryset
 
 
@@ -325,6 +328,7 @@ class Filter(object):
 
     def values(self, data):
         """Given data dict, return list of selected values."""
+        self.flagNOT = (data.get('not-'+self.key) is not None)
         return [v for v in map(self.coerce, data.get(self.key, []))]
 
 
