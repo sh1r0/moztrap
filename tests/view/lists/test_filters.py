@@ -346,7 +346,7 @@ class BoundFilterSetTest(FiltersTestCase):
     def test_filter(self):
         """filter method sends queryset through all filter's filter methods."""
         class MockFilter(self.filters.Filter):
-            def filter(self, queryset, values):
+            def filter(self, queryset, values, not_values):
                 # simple annotation so we can test the qs passed through here
                 setattr(queryset, self.name, values)
                 return queryset
@@ -393,7 +393,7 @@ class BoundFilterTest(FiltersTestCase):
     def test_filter(self):
         """Filtering just passes through queryset and values to filter."""
         class MyChoicesFilter(self.filters.ChoicesFilter):
-            def filter(self, queryset, values):
+            def filter(self, queryset, values, not_values):
                 # simple annotation so we can tell qs went through here
                 queryset.values = values
                 return queryset
@@ -475,22 +475,29 @@ class FilterTest(FiltersTestCase):
         f = self.filters.Filter("name", lookup="lookup")
 
         qs = Mock()
-        qs2 = f.filter(qs, ["1", "2"])
+        qs2 = f.filter(qs, ["1", "2"], ["3", "4"])
 
         qs.filter.assert_called_with(lookup__in=["1", "2"])
-        qs.filter.return_value.distinct.assert_called_with()
-        self.assertEqual(qs2, qs.filter.return_value.distinct.return_value)
+        qs = qs.filter.return_value
+
+        qs.exclude.assert_called_with(lookup__in=["3", "4"])
+        qs = qs.exclude.return_value
+
+        qs.distinct.assert_called_with()
+        qs = qs.distinct.return_value
+
+        self.assertEqual(qs2, qs)
 
 
     def test_filter_toggle(self):
         "Switches from ORed to ANDed filtering"
         f = self.filters.Filter("name", lookup="lookup", switchable=True)
 
-        f.values({"name-switch": ["on"]})
+        f.switch_toggle({"name-switch": ["on"]})
         self.assertTrue(f.toggle)
 
         qs = Mock()
-        qs2 = f.filter(qs, ["1", "2"])
+        qs2 = f.filter(qs, ["1", "2"], [])
 
         qs.filter.assert_called_with(lookup__in=["1"])
         qs.filter.return_value.filter.assert_called_with(lookup__in=["2"])
@@ -510,7 +517,14 @@ class FilterTest(FiltersTestCase):
         """Pulls ``self.key`` values from given data."""
         f = self.filters.Filter("name", key="key")
 
-        self.assertEqual(f.values({"key": ["one"], "name": ["two"]}), ["one"])
+        self.assertEqual(f.values({"key": ["one"], "key__ne": ["two"]}), ["one"])
+
+
+    def test_not_values(self):
+        """Pulls ``self.key+'__ne'`` values from given data."""
+        f = self.filters.Filter("name", key="key")
+
+        self.assertEqual(f.not_values({"key": ["one"], "key__ne": ["two"]}), ["two"])
 
 
     def test_coerce(self):
@@ -544,6 +558,13 @@ class BaseChoicesFilterTest(FiltersTestCase):
         f.get_choices = lambda: [("1", "one")]
 
         self.assertEqual(f.values({"name": ["1", "2"]}), ["1"])
+
+    def test_not_values(self):
+        """Not_Values are constrained to valid choices."""
+        f = self.filters.BaseChoicesFilter("name")
+        f.get_choices = lambda: [("1", "one")]
+
+        self.assertEqual(f.not_values({"name__ne": ["1", "2"]}), ["1"])
 
 
 
@@ -620,11 +641,11 @@ class KeywordExactFilterTest(FiltersTestCase):
 class KeywordFilterTest(FiltersTestCase):
     """Tests for KeywordFilter."""
     def test_filter(self):
-        """Filters queryset by 'contains' all values."""
+        """Filters queryset by 'contains' all values & not_values."""
         f = self.filters.KeywordFilter("name")
 
         qs = Mock()
-        qs2 = f.filter(qs, ["one", "two"])
+        qs2 = f.filter(qs, ["one", "two"], ["three", "four"])
 
         self.assertIs(
             qs2,
@@ -632,11 +653,11 @@ class KeywordFilterTest(FiltersTestCase):
 
 
     def test_filter_doesnt_touch_queryset_if_no_values(self):
-        """Doesn't call .distinct() or .filter() unless actually filtered."""
+        """Doesn't call .distinct(), .filter() or exclude() unless actually filtered."""
         f = self.filters.KeywordFilter("name")
 
         qs = Mock()
-        f.filter(qs, [])
+        f.filter(qs, [], [])
 
         self.assertEqual(qs.filter.call_count, 0)
         self.assertEqual(qs.distinct.call_count, 0)
