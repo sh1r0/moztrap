@@ -19,7 +19,7 @@ class PrefixIDFilter(KeywordFilter):
         super(PrefixIDFilter, self).__init__(name, lookup="case__id")
 
 
-    def filter(self, queryset, values):
+    def filter(self, queryset, values, not_values=None):
 
         query_filters = Q()
 
