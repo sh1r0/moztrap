@@ -105,7 +105,7 @@ var MT = (function (MT, $) {
                 onoff = filterItem.find(".onoff"),
                 fiInput = filterItem.find('input'),
                 filterValue = fiInput.val(),
-                filterKey =  filterPrefix + fiInput.data('name');
+                filterKey =  'moztrap-' + fiInput.attr('name');
 
             onoff.toggleClass("pinned");
 
@@ -119,11 +119,22 @@ var MT = (function (MT, $) {
                 onoff = filterItem.find(".onoff"),
                 fiInput = filterItem.find('input'),
                 filterValue = fiInput.val(),
-                filterKey =  filterPrefix + fiInput.data('name');
+                filterKey = filterPrefix + fiInput.data('name'),
+                filterNotKey = filterPrefix + fiInput.data('name') + '__ne',
+                state = fiInput.attr('status');
 
-            onoff.removeClass("pinned");
-
-            pinFilterValue(filterKey, filterValue, false);
+            switch (state) {
+                case 'included':
+                    pinFilterValue(filterKey, filterValue, false);
+                    pinFilterValue(filterNotKey, filterValue, onoff.hasClass("pinned"));
+                    break;
+                case 'excluded':
+                    onoff.removeClass("pinned");
+                    pinFilterValue(filterNotKey, filterValue, false);
+                    break;
+                default:
+                    break;
+            }
 
         });
     };
@@ -167,6 +178,7 @@ var MT = (function (MT, $) {
 
             // update the uri to have the pinned value
             uri.addSearch("filter-" + key, values);
+            key = key.replace(/__ne$/, "");
 
             // find the filter-item that this pinned filter applies to and
             // add the "pinned" class to the "onoff" span

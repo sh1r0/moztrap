@@ -1658,6 +1658,12 @@ body > div {
 .chickcheck .check:checked + .onoff, .reversecheck .check:checked + .onoff, .versioned .attachment-item .check:checked + .onoff, .tag-item .check:checked + .onoff, .magicfilter .compact .filter-item .check:checked + .onoff, .selectsearch .compact .filter-item .check:checked + .onoff, #add-environment-form .element-item .check:checked + .onoff {
   display: inline-block;
 }
+.magicfilter .compact .filter-item > .check[status=excluded] + .onoff {
+  text-decoration:line-through;
+}
+.magicfilter .compact .filter-item > .check[status=excluded] + .onoff .content {
+  color: gray;
+}
 .chickcheck .pinswitch + .content, .reversecheck .pinswitch + .content, .versioned .attachment-item .pinswitch + .content, .tag-item .pinswitch + .content, .magicfilter .compact .filter-item .pinswitch + .content, .selectsearch .compact .filter-item .pinswitch + .content, #add-environment-form .element-item .pinswitch + .content {
   border-left: 1px solid #a9b2bf;
   padding-left: 0.375em;
@@ -3401,6 +3407,10 @@ body > div {
 .magicfilter .expanded .check:checked + .onoff, .selectsearch .expanded .check:checked + .onoff {
   font-weight: 500;
   background-image: url('../images/ui/checkbox_checked.png?1331491029');
+}
+.magicfilter .expanded .check:indeterminate + .onoff {
+  text-decoration:line-through;
+  background-image: url('../images/ui/checkbox_pseudo.png?1331491029');
 }
 .magicfilter .keyword .content::before, .selectsearch .keyword .content::before, .magicfilter .keyword .onoffswitch::before, .selectsearch .keyword .onoffswitch::before {
   content: open-quote;

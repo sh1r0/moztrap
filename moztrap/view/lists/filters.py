@@ -225,7 +225,7 @@ class FilterSet(object):
 
 
 
-FilterOption = namedtuple("FilterOption", ["value", "label", "selected"])
+FilterOption = namedtuple("FilterOption", ["value", "label", "selected", "status"])
 
 
 
@@ -241,15 +241,18 @@ class BoundFilter(object):
         self.not_values = self._filter.not_values(self.data)
 
         value_set = set(self.values)
+        not_value_set = set(self.not_values)
         self.options = [
             FilterOption(
-                value=val, label=label, selected=(val in value_set))
+                value=val, label=label,
+                selected=(val in (value_set|not_value_set)),
+                status=("included" if val in value_set else "excluded" if val in not_value_set else "disabled"))
             for val, label in self._filter.options(self.values)]
 
 
     def filter(self, queryset):
         """Return filtered queryset."""
-        return self._filter.filter(queryset, self.values, self.not_values)
+        return self._filter.filter(queryset, self.values, not_values=self.not_values)
 
 
     @property
