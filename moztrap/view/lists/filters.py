@@ -225,7 +225,7 @@ class FilterSet(object):
 
 
 
-FilterOption = namedtuple("FilterOption", ["value", "label", "selected", "status"])
+FilterOption = namedtuple("FilterOption", ["value", "label", "selected", "negated"])
 
 
 
@@ -246,7 +246,7 @@ class BoundFilter(object):
             FilterOption(
                 value=val, label=label,
                 selected=(val in (value_set|not_value_set)),
-                status=("included" if val in value_set else "excluded" if val in not_value_set else "disabled"))
+                negated=(val in not_value_set))
             for val, label in self._filter.options(self.values)]
 
 

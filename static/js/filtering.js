@@ -119,23 +119,39 @@ var MT = (function (MT, $) {
                 onoff = filterItem.find(".onoff"),
                 fiInput = filterItem.find('input'),
                 filterValue = fiInput.val(),
-                filterKey = filterPrefix + fiInput.data('name'),
-                filterNotKey = filterPrefix + fiInput.data('name') + '__ne',
-                state = fiInput.attr('status');
+                filterKey =  'moztrap-' + fiInput.attr('name');
 
-            switch (state) {
-                case 'included':
+            onoff.removeClass("pinned");
+
+            pinFilterValue(filterKey, filterValue, false);
+
+        });
+
+        $('.filter-group').on('click', '.content', function (e) {
+            var thisPin = $(this),
+                filterItem = thisPin.closest(".filter-item"),
+                onoff = filterItem.find(".onoff"),
+                fiInput = filterItem.find('input'),
+                filterValue = fiInput.val(),
+                filterName = fiInput.data('name'),
+                filterKey =  filterPrefix + filterName;
+
+            if (onoff.hasClass('negated')) {
+                fiInput.attr('name', 'filter-' + filterName);
+                if (onoff.hasClass("pinned")) {
+                    pinFilterValue(filterKey+'__ne', filterValue, false);
+                    pinFilterValue(filterKey, filterValue, true);
+                }
+                onoff.removeClass('negated');
+            } else {
+                fiInput.prop('name', 'filter-' + filterName + '__ne');
+                if (onoff.hasClass("pinned")) {
                     pinFilterValue(filterKey, filterValue, false);
-                    pinFilterValue(filterNotKey, filterValue, onoff.hasClass("pinned"));
-                    break;
-                case 'excluded':
-                    onoff.removeClass("pinned");
-                    pinFilterValue(filterNotKey, filterValue, false);
-                    break;
-                default:
-                    break;
+                    pinFilterValue(filterKey+'__ne', filterValue, true);
+                }
+                onoff.addClass('negated');
             }
-
+            fiInput.change();
         });
     };
 

@@ -8,8 +8,8 @@
     {% endif %}
     {% for option in field %}
     <li class="filter-item">
-      <input type="checkbox" name="{{ prefix }}-{{ field.key }}" data-name="{{ field.key }}" value="{{ option.value }}" id="id-{{ prefix }}-{{ field.key }}-{{ forloop.counter }}"{% if option.selected %} checked{% endif %} status="{{ option.status }}" class="check">
-      <span class="onoff">
+      <input type="checkbox" name="{{ prefix }}-{{ field.key }}{% if option.negated %}__ne{% endif %}" data-name="{{ field.key }}" value="{{ option.value }}" id="id-{{ prefix }}-{{ field.key }}-{{ forloop.counter }}"{% if option.selected %} checked{% endif %} class="check">
+      <span class="onoff{% if option.negated %} negated{% endif %}">
         <label for="id-{{ prefix }}-{{ field.key }}-{{ forloop.counter }}" class="onoffswitch">{{ option.label }}</label>
         {% if pinable %}
             <span class="pinswitch"></span>
@@ -21,52 +21,3 @@
     
   </ul>
 </section>
-<script src="{{ STATIC_URL }}js/jquery-1.7.2.js"></script>
-    <script type="text/javascript">
-    $(function () {
-      var setState = function (cb, state) {
-          switch (state) {
-              case 'included':
-                  $(cb).prop("indeterminate", false).
-                  attr('checked', true).
-                  attr('status', state);
-                  break;
-              case 'excluded':
-                  $(cb).prop("indeterminate", true).
-                  attr('checked', true).
-                  attr('name', "{{ prefix }}-"+$(cb).data('name')+'__ne').
-                  attr('status', state);
-                  break;
-              case 'disabled':
-                  $(cb).prop("indeterminate", false).
-                  attr('checked', false).
-                  attr('name', "{{ prefix }}-"+$(cb).data('name')).
-                  attr('status', state);
-                  break;
-          }
-      }
-      
-      var getNextState = function(state) {
-          switch (state) {
-              case 'included':
-                  return 'excluded';
-              case 'excluded':
-                  return 'disabled';
-              case 'disabled':
-                  return 'included';
-              default:
-                  return 'included';
-          }
-      }
-      
-      $('.check').ready().each(function() {
-          setState($(this), $(this).attr('status'));
-      });
-
-      $('.check').on('change', function() {
-          var state = $(this).attr('status');
-          state = getNextState(state);
-          setState($(this), state);
-      });
-    });
-    </script>
