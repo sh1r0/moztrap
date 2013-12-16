@@ -252,7 +252,7 @@ class BoundFilter(object):
 
     def filter(self, queryset):
         """Return filtered queryset."""
-        return self._filter.filter(queryset, self.values, not_values=self.not_values)
+        return self._filter.filter(queryset, self.values, self.not_values)
 
 
     @property
@@ -312,7 +312,7 @@ class Filter(object):
         self._coerce_func = coerce
 
 
-    def filter(self, queryset, values, not_values=None):
+    def filter(self, queryset, values, not_values):
         """Given queryset and selected values, return filtered queryset."""
         if values:
             filters = {"{0}__in".format(self.lookup): values}
@@ -460,7 +460,7 @@ class KeywordFilter(KeywordExactFilter):
     """Values are ANDed in a 'contains' search of the field"""
 
 
-    def filter(self, queryset, values, not_values=None):
+    def filter(self, queryset, values, not_values):
         """Values are ANDed in a 'contains' search of the field text."""
         for value in values:
             queryset = queryset.filter(

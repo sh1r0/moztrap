@@ -29,6 +29,7 @@ class PrefixIDFilterTest(case.DBTestCase):
         res = f.filter(
             self.model.CaseVersion.objects.all(),
             criteria,
+            [],
             )
         return res
 
