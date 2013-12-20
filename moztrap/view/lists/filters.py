@@ -247,7 +247,7 @@ class BoundFilter(object):
                 value=val, label=label,
                 selected=(val in (value_set|not_value_set)),
                 negated=(val in not_value_set))
-            for val, label in self._filter.options(self.values)]
+            for val, label in self._filter.options(self.values+self.not_values)]
 
 
     def filter(self, queryset):
