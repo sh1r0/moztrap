@@ -83,8 +83,8 @@ var MT = (function (MT, $) {
             // certain fields have the same field name, but values don't
             // cross over.
             var path = {path: '/'};
-            if (filterKey.toLowerCase() === filterPrefix + "name" ||
-                filterKey.toLowerCase() === filterPrefix + "id") {
+            if (filterKey.toLowerCase().replace(/__ne$/, "") === filterPrefix + "name" ||
+                filterKey.toLowerCase().replace(/__ne$/, "") === filterPrefix + "id") {
                 path = {};
                 if (cookieVal) {
                     $(ich.message({
