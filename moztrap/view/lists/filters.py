@@ -343,24 +343,18 @@ class Filter(object):
     def filter(self, queryset, values, not_values):
         """Given queryset and selected values, return filtered queryset."""
         if values or not_values:
-            if self.toggle:
-                for value in values:
-                    queryset = queryset.filter(
-                        **{"{0}__in".format(self.lookup): [value]})
+            filters = Q()
+            op_func = operator.__and__ if self.toggle else operator.__or__
 
-                for not_value in not_values:
-                    queryset = queryset.exclude(
-                        **{"{0}__in".format(self.lookup): [not_value]})
+            for value in values:
+                filters = op_func(filters,
+                    Q(**{"{0}__in".format(self.lookup): [value]}))
 
-                queryset = queryset.filter(**self.extra_filters)
-            else:
-                filters = {"{0}__in".format(self.lookup): values}
-                filters.update(self.extra_filters)
-                queryset = queryset.filter(**filters)
-                queryset = queryset.exclude(
-                    **{"{0}__in".format(self.lookup): not_values})
+            for not_value in not_values:
+                filters = op_func(filters,
+                    ~Q(**{"{0}__in".format(self.lookup): [not_value]}))
 
-            return queryset.distinct()
+            return queryset.filter(filters).filter(**self.extra_filters).distinct()
 
         return queryset
 

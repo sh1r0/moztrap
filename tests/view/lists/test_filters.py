@@ -8,6 +8,7 @@ from mock import Mock
 from django.template.response import TemplateResponse
 from django.test import RequestFactory
 from django.utils.datastructures import MultiValueDict
+from django.db.models import Q
 
 from tests import case
 
@@ -435,6 +436,13 @@ class BoundFilterTest(FiltersTestCase):
 
 class FilterTest(FiltersTestCase):
     """Tests for base Filter class."""
+    def setUp(self):
+        def __str__(self):
+            return '{0}{{{1}}}'.format(self.connector, ','.join([str(c) for c in self.children]))
+
+        Q.__str__ = __str__
+
+
     def test_name(self):
         """Name attribute is from mandatory first instantiation argument."""
         f = self.filters.Filter("name")
@@ -477,16 +485,17 @@ class FilterTest(FiltersTestCase):
         qs = Mock()
         qs2 = f.filter(qs, ["1", "2"], ["3", "4"])
 
-        qs.filter.assert_called_with(lookup__in=["1", "2"])
-        qs = qs.filter.return_value
+        flt = Q()
+        flt = flt | Q(**{"lookup__in": ["1"]})
+        flt = flt | Q(**{"lookup__in": ["2"]})
+        flt = flt | ~Q(**{"lookup__in": ["3"]})
+        flt = flt | ~Q(**{"lookup__in": ["4"]})
 
-        qs.exclude.assert_called_with(lookup__in=["3", "4"])
-        qs = qs.exclude.return_value
+        flt2 = qs.filter.call_args[0][0]
 
-        qs.distinct.assert_called_with()
-        qs = qs.distinct.return_value
+        self.assertEqual(str(flt), str(flt2))
 
-        self.assertEqual(qs2, qs)
+        self.assertEqual(qs2, qs.filter.return_value.filter.return_value.distinct.return_value)
 
 
     def test_filter_toggle(self):
@@ -497,13 +506,19 @@ class FilterTest(FiltersTestCase):
         self.assertTrue(f.toggle)
 
         qs = Mock()
-        qs2 = f.filter(qs, ["1", "2"], [])
+        qs2 = f.filter(qs, ["1", "2"], ["3", "4"])
 
-        qs.filter.assert_called_with(lookup__in=["1"])
-        qs.filter.return_value.filter.assert_called_with(lookup__in=["2"])
-        qs.filter.return_value.filter.return_value.filter.assert_called_with()
-        qs.filter.return_value.filter.return_value.filter.return_value.distinct.assert_called_with()
-        self.assertEqual(qs2, qs.filter.return_value.filter.return_value.filter.return_value.distinct.return_value)
+        flt = Q()
+        flt = flt & Q(**{"lookup__in": ["1"]})
+        flt = flt & Q(**{"lookup__in": ["2"]})
+        flt = flt & ~Q(**{"lookup__in": ["3"]})
+        flt = flt & ~Q(**{"lookup__in": ["4"]})
+
+        flt2 = qs.filter.call_args[0][0]
+
+        self.assertEqual(str(flt), str(flt2))
+
+        self.assertEqual(qs2, qs.filter.return_value.filter.return_value.distinct.return_value)
 
 
     def test_options(self):
@@ -640,6 +655,13 @@ class KeywordExactFilterTest(FiltersTestCase):
 
 class KeywordFilterTest(FiltersTestCase):
     """Tests for KeywordFilter."""
+    def setUp(self):
+        def __str__(self):
+            return '{0}{{{1}}}'.format(self.connector, ','.join([str(c) for c in self.children]))
+
+        Q.__str__ = __str__
+
+
     def test_filter(self):
         """Filters queryset by 'contains' all values & not_values."""
         f = self.filters.KeywordFilter("name")
@@ -647,9 +669,38 @@ class KeywordFilterTest(FiltersTestCase):
         qs = Mock()
         qs2 = f.filter(qs, ["one", "two"], ["three", "four"])
 
-        self.assertIs(
-            qs2,
-            qs.filter.return_value.distinct.return_value)
+        flt = Q()
+        flt = flt & Q(**{"name__icontains": "one"})
+        flt = flt & Q(**{"name__icontains": "two"})
+        flt = flt & ~Q(**{"name__icontains": "three"})
+        flt = flt & ~Q(**{"name__icontains": "four"})
+
+        flt2 = qs.filter.call_args[0][0]
+
+        self.assertEqual(str(flt), str(flt2))
+
+        self.assertEqual(qs2, qs.filter.return_value.distinct.return_value)
+
+
+    def test_filter_toggle(self):
+        "Switches from ANDed to ORed filtering"
+        f = self.filters.KeywordFilter("name")
+
+        f.switch_toggle({"name-switch": ["on"]})
+        self.assertTrue(f.toggle)
+
+        qs = Mock()
+        qs2 = f.filter(qs, ["one", "two"], ["three", "four"])
+
+        flt = Q()
+        flt = flt | Q(**{"name__icontains": "one"})
+        flt = flt | Q(**{"name__icontains": "two"})
+        flt = flt | ~Q(**{"name__icontains": "three"})
+        flt = flt | ~Q(**{"name__icontains": "four"})
+
+        flt2 = qs.filter.call_args[0][0]
+
+        self.assertEqual(qs2, qs.filter.return_value.distinct.return_value)
 
 
     def test_filter_doesnt_touch_queryset_if_no_values(self):
